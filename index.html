@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Préstamo</title>
+  <link rel="manifest" href="manifest.json" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white shadow-xl rounded-2xl p-6 max-w-xl w-full space-y-6">
+    <h1 class="text-2xl font-bold text-center">Calculadora de Préstamo</h1>
+    <p class="text-sm text-gray-600 text-center">Calcula tu cuota mensual fácilmente.</p>
+
+    <!-- Formulario -->
+    <div class="space-y-4">
+      <div>
+        <label class="block font-medium">Capital (€):</label>
+        <input type="number" id="capital" class="w-full mt-1 p-2 rounded border border-gray-300" placeholder="Ej: 10000">
+      </div>
+
+      <div>
+        <label class="block font-medium">Interés Anual (%):</label>
+        <input type="number" id="interes" class="w-full mt-1 p-2 rounded border border-gray-300" placeholder="Ej: 5">
+      </div>
+
+      <div>
+        <label class="block font-medium">Plazo (meses):</label>
+        <input type="number" id="plazo" class="w-full mt-1 p-2 rounded border border-gray-300" placeholder="Ej: 60">
+      </div>
+
+      <div>
+        <label class="block font-medium">¿Periodo de carencia?</label>
+        <select id="carencia" class="w-full mt-1 p-2 rounded border border-gray-300">
+          <option value="no">No</option>
+          <option value="si">Sí</option>
+        </select>
+      </div>
+
+      <div id="carenciaMesesDiv" class="hidden">
+        <label class="block font-medium">Meses de carencia:</label>
+        <input type="number" id="carenciaMeses" class="w-full mt-1 p-2 rounded border border-gray-300" placeholder="Ej: 6">
+      </div>
+
+      <button onclick="calcularCuota()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">Calcular</button>
+    </div>
+
+    <div id="resultado" class="text-center text-lg font-semibold text-green-700"></div>
+
+    <div class="text-sm text-gray-500 text-center mt-4 border-t pt-4">
+      <p>✔️ Puede instalarse como App en iOS y Android.</p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("carencia").addEventListener("change", function () {
+      document.getElementById("carenciaMesesDiv").classList.toggle("hidden", this.value !== "si");
+    });
+
+    function calcularCuota() {
+      const capital = parseFloat(document.getElementById("capital").value);
+      const interesAnual = parseFloat(document.getElementById("interes").value);
+      const plazo = parseInt(document.getElementById("plazo").value);
+      const carencia = document.getElementById("carencia").value;
+      const carenciaMeses = carencia === "si" ? parseInt(document.getElementById("carenciaMeses").value) : 0;
+      const resultado = document.getElementById("resultado");
+
+      if (isNaN(capital) || isNaN(interesAnual) || isNaN(plazo) || (carencia === "si" && isNaN(carenciaMeses))) {
+        resultado.textContent = "⚠️ Completa todos los campos correctamente.";
+        return;
+      }
+
+      if (carenciaMeses > plazo) {
+        resultado.textContent = "⚠️ Carencia no puede ser mayor que el plazo.";
+        return;
+      }
+
+      const interesMensual = interesAnual / 12 / 100;
+      let mensaje = "";
+
+      if (carencia === "si" && carenciaMeses > 0) {
+        const cuotaIntereses = capital * interesMensual;
+        const plazoRestante = plazo - carenciaMeses;
+        const cuotaNormal = capital * interesMensual / (1 - Math.pow(1 + interesMensual, -plazoRestante));
+        mensaje += `📌 Durante ${carenciaMeses} meses: solo intereses → <strong>${cuotaIntereses.toFixed(2)} €/mes</strong><br>`;
+        mensaje += `📌 Luego ${plazoRestante} meses: cuota total → <strong>${cuotaNormal.toFixed(2)} €/mes</strong>`;
+      } else {
+        const cuota = capital * interesMensual / (1 - Math.pow(1 + interesMensual, -plazo));
+        mensaje = `💶 Cuota mensual: <strong>${cuota.toFixed(2)} €</strong>`;
+      }
+
+      resultado.innerHTML = mensaje;
+    }
+  </script>
+</body>
+</html>
